@@ -4,6 +4,9 @@ import pandas as pd
 import io
 from datetime import datetime
 
+# ----------------------
+# Konfigurasi Halaman
+# ----------------------
 st.set_page_config(page_title="Evaluasi Bangun Ruang Sisi Datar", layout="centered")
 
 # ----------------------
@@ -19,7 +22,7 @@ QUESTIONS = [
     },
     {
         "id": "Q2",
-        "question": "Sebuah menara berbentuk prisma segitiga memiliki alas segitiga dengan luas 6 m² dan tinggi prisma 10 m. Volume berapa?",
+        "question": "Sebuah menara berbentuk prisma segitiga memiliki alas segitiga dengan luas 6 m² dan tinggi prisma 10 m. Berapa volumenya?",
         "options": {"A": "60 m³", "B": "16 m³", "C": "600 m³", "D": "6 m³"},
         "answer": "A",
         "explain": "Volume prisma = luas alas × tinggi = 6 × 10 = 60 m³."
@@ -41,9 +44,9 @@ QUESTIONS = [
     {
         "id": "Q5",
         "question": "Sebuah bak air berbentuk balok panjang 2 m, lebar 1,5 m, tinggi 1 m. Jika diisi 75% kapasitasnya, berapa volume air (m³)?",
-        "options": {"A": "1,5 m³", "B": "3,0 m³", "C": "0,75 m³", "D": "2,5 m³"},
+        "options": {"A": "2.25 m³", "B": "3.0 m³", "C": "0.75 m³", "D": "1.5 m³"},
         "answer": "A",
-        "explain": "Kapasitas total = 2×1.5×1 = 3 m³; 75% → 0.75×3 = 2.25 m³. (Catatan: jawaban A salah ketik sebelumnya) --> **Betul: 2.25 m³**. (Dalam soal ini, opsi A harus 2.25. Pastikan opsi di repo sesuai.)"
+        "explain": "Kapasitas total = 2×1.5×1 = 3 m³; 75% → 0.75×3 = 2.25 m³."
     },
     {
         "id": "Q6",
@@ -57,7 +60,7 @@ QUESTIONS = [
         "question": "Sebuah topi berbentuk kerucut memiliki jari-jari 7 cm dan tinggi 24 cm. Volume kerucut berapa? (π = 22/7)",
         "options": {"A": "2.464 cm³", "B": "1.848 cm³", "C": "2.310 cm³", "D": "1.232 cm³"},
         "answer": "A",
-        "explain": "Volume = (1/3)πr²h = (1/3)×(22/7)×7²×24 = (1/3)×22×7×24 = 2.464 cm³."
+        "explain": "Volume = (1/3)πr²h = (1/3)×(22/7)×7²×24 = 2.464 cm³."
     },
     {
         "id": "Q8",
@@ -75,30 +78,26 @@ QUESTIONS = [
     },
     {
         "id": "Q10",
-        "question": "Sebuah paket berbentuk kubus memiliki sisi 30 cm. Jika akan dibungkus kertas dan setiap lembar kertas berukuran 0,5 m × 0,7 m, berapa lembar minimum (asumsi tidak ada sisa besar)?",
+        "question": "Sebuah paket berbentuk kubus memiliki sisi 30 cm. Jika akan dibungkus kertas dan setiap lembar kertas berukuran 0,5 m × 0,7 m, berapa lembar minimum yang dibutuhkan?",
         "options": {"A": "2 lembar", "B": "3 lembar", "C": "4 lembar", "D": "1 lembar"},
         "answer": "A",
-        "explain": "Luas permukaan kubus = 6×(0.3×0.3)=6×0.09=0.54 m². Satu lembar = 0.35 m². 0.54 / 0.35 ≈ 1.54 → butuh 2 lembar."
+        "explain": "Luas permukaan kubus = 6×(0.3×0.3)=0.54 m². Satu lembar = 0.35 m². 0.54/0.35 ≈ 1.54 → butuh 2 lembar."
     },
 ]
 
 # ----------------------
-# Utility functions
+# Fungsi Skor
 # ----------------------
 def compute_score(answers, justifications):
     correct = 0
     bonus = 0.0
-    per_correct = 1.0
-    for idx, q in enumerate(QUESTIONS):
+    for q in QUESTIONS:
         qid = q["id"]
-        user_ans = answers.get(qid, "")
-        if user_ans == q["answer"]:
-            correct += per_correct
-        # simple heuristic: justifikasi cukup panjang => +0.5 poin
-        justification = justifications.get(qid, "")
-        if justification and len(justification.strip()) >= 30:
+        if answers.get(qid) == q["answer"]:
+            correct += 1
+        if len(justifications.get(qid, "").strip()) >= 30:
             bonus += 0.5
-    max_score = len(QUESTIONS) + (0.5 * len(QUESTIONS))  # if all justifications long
+    max_score = len(QUESTIONS) + (0.5 * len(QUESTIONS))
     total = correct + bonus
     percent = (total / max_score) * 100
     return {
@@ -110,108 +109,78 @@ def compute_score(answers, justifications):
     }
 
 # ----------------------
-# UI: header & role
+# UI: Header & Role
 # ----------------------
-st.title("Evaluasi: Bangun Ruang Sisi Datar — 10 Soal (Pilihan Ganda)")
-st.write("Aplikasi ini mengumpulkan jawaban, meminta justifikasi singkat (untuk menilai berpikir kritis), dan menghasilkan file Excel yang bisa diunduh.")
+st.title("Evaluasi Bangun Ruang Sisi Datar (10 Soal)")
+st.write("Aplikasi ini membantu siswa mengerjakan soal berbasis kehidupan sehari-hari dan memberikan hasil dalam bentuk Excel.")
 
 role = st.sidebar.selectbox("Pilih Peran", ["Siswa", "Guru"])
 
-# Role descriptions
-if role == "Siswa":
-    st.info("Peran Siswa: kerjakan 10 soal, lengkapi justifikasi singkat tiap soal (opsional tapi meningkatkan skor berpikir kritis). Setelah submit, Anda dapat mengunduh hasil dalam bentuk Excel.")
-else:
-    st.info("Peran Guru: lihat rekap semua respon siswa, analitik sederhana, dan unduh seluruh respons sebagai Excel untuk penilaian lebih lanjut.")
-
-# Simple storage in-memory; for real deployment gunakan DB or Sheets
+# Penyimpanan sementara
 if "responses" not in st.session_state:
-    st.session_state.responses = []  # list of dicts
+    st.session_state.responses = []
 
 # ----------------------
 # GURU VIEW
 # ----------------------
 if role == "Guru":
-    st.header("Panel Guru — Rekap Respon")
-    st.write("Total respon:", len(st.session_state.responses))
+    st.header("👩‍🏫 Panel Guru — Rekapitulasi Hasil")
     if len(st.session_state.responses) == 0:
-        st.warning("Belum ada respon siswa. Minta siswa untuk mengerjakan kuis.")
+        st.warning("Belum ada data siswa.")
     else:
-        # build DataFrame
         df = pd.DataFrame(st.session_state.responses)
         st.dataframe(df)
-        st.markdown("**Statistik ringkas:**")
-        st.write(df[["timestamp", "student_name", "percent", "total_score"]].sort_values(by="timestamp", ascending=False).head(20))
-        # Simple aggregate
         avg_percent = df["percent"].mean()
-        st.metric("Rata-rata persentase", f"{avg_percent:.2f}%")
-        # Download all as excel
+        st.metric("Rata-rata Nilai (%)", f"{avg_percent:.2f}%")
+
         towrite = io.BytesIO()
         df.to_excel(towrite, index=False, engine="openpyxl")
         towrite.seek(0)
-        st.download_button("Unduh semua respons (Excel)", data=towrite, file_name="rekap_respon_siswa.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        st.caption("Gunakan Excel untuk penilaian lengkap atau catat rubrik berpikir kritis.")
+        st.download_button("📥 Unduh Rekap Excel", data=towrite, file_name="rekap_siswa.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # ----------------------
 # SISWA VIEW
 # ----------------------
 if role == "Siswa":
-    st.header("Form Siswa")
-    name = st.text_input("Nama lengkap", "")
-    email = st.text_input("Email (opsional)", "")
+    st.header("🧑‍🎓 Form Siswa")
+    name = st.text_input("Nama lengkap:")
+    email = st.text_input("Email (opsional):")
 
-    st.write("Isi jawabanmu, dan berikan justifikasi singkat (minimal 30 karakter) bila memungkinkan — itu membantu menilai kemampuan berpikir kritis.")
     answers = {}
     justifications = {}
 
     with st.form("quiz_form"):
         for q in QUESTIONS:
             st.markdown(f"**{q['id']}. {q['question']}**")
-            cols = st.columns([1, 5])
-            choice = cols[0].radio("Pilih:", options=list(q["options"].keys()), key=f"ans_{q['id']}")
-            st.write(", ".join([f"{k}) {v}" for k, v in q["options"].items()]))
-            just = st.text_area("Justifikasi singkat (bagaimana ini berhubungan dengan kehidupan sehari-hari atau alasan pilihanmu):", key=f"just_{q['id']}", placeholder="Contoh: 'Saya pilih A karena ...'", height=80)
+            choice = st.radio("Pilih jawaban:", list(q["options"].keys()), key=f"ans_{q['id']}")
+            st.write(", ".join([f\"{k}) {v}\" for k, v in q['options'].items()]))
+            just = st.text_area("Justifikasi singkat (minimal 30 karakter):", key=f"just_{q['id']}")
             answers[q["id"]] = choice
             justifications[q["id"]] = just
 
-        submitted = st.form_submit_button("Submit Jawaban")
+        submitted = st.form_submit_button("Kirim Jawaban")
 
     if submitted:
         if not name.strip():
-            st.warning("Masukkan nama terlebih dahulu supaya hasil bisa disimpan.")
+            st.warning("Masukkan nama terlebih dahulu!")
         else:
             result = compute_score(answers, justifications)
-            st.success(f"Terima kasih, {name}! Hasilmu: {result['total_score']:.2f} / {result['max_score']:.2f} ({result['percent']}%).")
-            st.write(f"Jumlah jawaban benar (point): {result['correct_count']}")
-            st.write(f"Bonus poin untuk justifikasi (panjang >=30 karakter): {result['bonus_points']:.1f}")
-            st.markdown("**Ulasan singkat tiap soal (kunci & penjelasan):**")
-            for q in QUESTIONS:
-                st.write(f"- {q['id']}: Kunci = **{q['answer']}** — {q['explain']}")
+            st.success(f"Hasil: {result['total_score']:.2f}/{result['max_score']:.2f} ({result['percent']}%)")
+            st.write(f"Jawaban benar: {result['correct_count']}, Bonus justifikasi: {result['bonus_points']:.1f}")
 
-            # Save response
             record = {
-                "timestamp": datetime.now().isoformat(sep=" ", timespec="seconds"),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "student_name": name,
                 "email": email,
-                "percent": result["percent"],
-                "total_score": result["total_score"],
-                "correct_count": result["correct_count"],
-                "bonus_points": result["bonus_points"]
+                **result
             }
-            # add answers & justifications fields
-            for q in QUESTIONS:
-                record[f"{q['id']}_answer"] = answers.get(q["id"], "")
-                record[f"{q['id']}_justification"] = justifications.get(q["id"], "")
-
             st.session_state.responses.append(record)
 
-            # Create dataframe for the student download (single row)
             df_single = pd.DataFrame([record])
             towrite = io.BytesIO()
             df_single.to_excel(towrite, index=False, engine="openpyxl")
             towrite.seek(0)
-            st.download_button("Unduh hasilmu (Excel)", data=towrite, file_name=f"hasil_{name.replace(' ', '_')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            st.info("Catatan: Guru bisa meninjau file Excel yang berisi jawaban & justifikasi untuk menilai aspek berpikir kritis secara kualitatif.")
+            st.download_button("📥 Unduh Hasilmu (Excel)", data=towrite, file_name=f"hasil_{name.replace(' ', '_')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# Footer: petunjuk singkat
 st.markdown("---")
-st.markdown("**Catatan untuk pengembang / guru:** untuk penyimpanan permanen dan multi-user, integrasikan database (Google Sheets, Firebase, atau Postgres). Mekanisme bonus justifikasi di atas bersifat heuristik; guru disarankan menilai kualitas justifikasi secara manual menggunakan rubrik.")
+st.caption("© 2025 Evaluasi Bangun Ruang Sisi Datar | Dikembangkan untuk pembelajaran berbasis berpikir kritis")
