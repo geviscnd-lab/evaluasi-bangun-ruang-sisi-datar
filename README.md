@@ -1,23 +1,13 @@
-# evaluasi-bangun-ruang-sisi-datar
+# Evaluasi Bangun Ruang Sisi Datar
 
-A Streamlit app for evaluating critical-thinking on flat-faced 3D shapes (bangun ruang sisi datar).
-Features:
-- 10 multiple-choice questions with real-life context.
-- Students provide short justification per question (used for simple bonus scoring and teacher review).
-- Results saved in-memory (demo) and downloadable as Excel per student.
-- Teacher panel to view all responses and download aggregated Excel.
+Aplikasi berbasis Streamlit untuk mengukur kemampuan berpikir kritis siswa SMP pada materi Bangun Ruang Sisi Datar.  
+Siswa menjawab 10 soal pilihan ganda berbasis kehidupan sehari-hari, dan hasilnya dapat diunduh dalam bentuk Excel.
 
-## Run locally
-1. Clone repo
-2. (Optional) create virtualenv
-3. Install deps:
-   pip install -r requirements.txt
-4. Run:
-   streamlit run app.py
+## Fitur
+- Mode **Siswa**: mengerjakan soal dan mengunduh hasil
+- Mode **Guru**: melihat rekap nilai semua siswa dan mengunduh Excel rekap
 
-## Notes for deployment
-- For production, replace in-memory storage with DB (Google Sheets / Firebase / Postgres).
-- Adjust scoring & rubrics for critical thinking as needed; current heuristic gives +0.5 point per justification ≥ 30 chars.
-- Update questions / options in `app.py`.
-
-License: MIT
+## Cara Menjalankan
+```bash
+pip install -r requirements.txt
+streamlit run app.py
