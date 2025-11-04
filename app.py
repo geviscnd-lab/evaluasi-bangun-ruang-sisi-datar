@@ -1,186 +1,308 @@
-# app.py
-import streamlit as st
-import pandas as pd
-import io
-from datetime import datetime
+# Repository: evaluasi-bangun-ruang-sisi-datar
 
-# ----------------------
-# Konfigurasi Halaman
-# ----------------------
-st.set_page_config(page_title="Evaluasi Bangun Ruang Sisi Datar", layout="centered")
+This single-file preview contains a ready-to-run React app (single-file component + README + package.json) that implements:
 
-# ----------------------
-# DATA: 10 soal + opsi
-# ----------------------
-QUESTIONS = [
-    {
-        "id": "Q1",
-        "question": "Sebuah kotak kardus berukuran panjang 40 cm, lebar 30 cm, tinggi 20 cm. Berapa volume kotak tersebut?",
-        "options": {"A": "24.000 cm³", "B": "2.400 cm³", "C": "240.000 cm³", "D": "4.000 cm³"},
-        "answer": "A",
-        "explain": "Volume balok = p × l × t = 40×30×20 = 24.000 cm³."
-    },
-    {
-        "id": "Q2",
-        "question": "Sebuah menara berbentuk prisma segitiga memiliki alas segitiga dengan luas 6 m² dan tinggi prisma 10 m. Berapa volumenya?",
-        "options": {"A": "60 m³", "B": "16 m³", "C": "600 m³", "D": "6 m³"},
-        "answer": "A",
-        "explain": "Volume prisma = luas alas × tinggi = 6 × 10 = 60 m³."
-    },
-    {
-        "id": "Q3",
-        "question": "Sebuah limas segiempat dengan luas alas 25 m² dan tinggi 6 m. Volume limas adalah ...",
-        "options": {"A": "150 m³", "B": "50 m³", "C": "25 m³", "D": "450 m³"},
-        "answer": "B",
-        "explain": "Volume limas = (1/3) × luas alas × tinggi = (1/3)×25×6 = 50 m³."
-    },
-    {
-        "id": "Q4",
-        "question": "Sebuah kubus memiliki diagonal ruang 6√3 cm. Panjang sisi kubus adalah ...",
-        "options": {"A": "6 cm", "B": "3 cm", "C": "2√3 cm", "D": "√3 cm"},
-        "answer": "A",
-        "explain": "Diagonal ruang kubus = s√3 → s = diagonal/√3 = 6√3 / √3 = 6 cm."
-    },
-    {
-        "id": "Q5",
-        "question": "Sebuah bak air berbentuk balok panjang 2 m, lebar 1,5 m, tinggi 1 m. Jika diisi 75% kapasitasnya, berapa volume air (m³)?",
-        "options": {"A": "2.25 m³", "B": "3.0 m³", "C": "0.75 m³", "D": "1.5 m³"},
-        "answer": "A",
-        "explain": "Kapasitas total = 2×1.5×1 = 3 m³; 75% → 0.75×3 = 2.25 m³."
-    },
-    {
-        "id": "Q6",
-        "question": "Jika sebuah prisma segiempat memiliki ukuran alas 4 m × 3 m dan tinggi 5 m, berapa luas permukaan seluruh prisma (dengan tutup dan alas)?",
-        "options": {"A": "94 m²", "B": "86 m²", "C": "94 m³", "D": "120 m²"},
-        "answer": "A",
-        "explain": "Luas alas = 4×3=12; 2×alas=24. Keliling alas = 2(4+3)=14. Luas selimut = keliling×tinggi = 14×5=70. Total = 24+70=94 m²."
-    },
-    {
-        "id": "Q7",
-        "question": "Sebuah topi berbentuk kerucut memiliki jari-jari 7 cm dan tinggi 24 cm. Volume kerucut berapa? (π = 22/7)",
-        "options": {"A": "2.464 cm³", "B": "1.848 cm³", "C": "2.310 cm³", "D": "1.232 cm³"},
-        "answer": "A",
-        "explain": "Volume = (1/3)πr²h = (1/3)×(22/7)×7²×24 = 2.464 cm³."
-    },
-    {
-        "id": "Q8",
-        "question": "Sebuah kotak kemasan berbentuk balok diperlukan untuk menampung sebuah botol berbentuk silinder berdiameter 8 cm dan tinggi 30 cm. Minimum ukuran lebar balok agar botol muat (asumsi berdiri) adalah ...",
-        "options": {"A": "8 cm", "B": "16 cm", "C": "π×8 cm", "D": "4 cm"},
-        "answer": "A",
-        "explain": "Jika botol berdiri, lebar minimum balok perlu ≥ diameter = 8 cm."
-    },
-    {
-        "id": "Q9",
-        "question": "Sebuah gedung berbentuk limas segiempat dipasang ventilasi di setiap sisi segitiga tegak. Jika tinggi segitiga sisi adalah 3 m dan alas sisi 4 m, luas total 4 sisi segitiga adalah ...",
-        "options": {"A": "24 m²", "B": "12 m²", "C": "48 m²", "D": "6 m²"},
-        "answer": "A",
-        "explain": "Luas satu segitiga = 1/2 × alas × tinggi = 1/2×4×3 = 6 m². Empat sisi → 24 m²."
-    },
-    {
-        "id": "Q10",
-        "question": "Sebuah paket berbentuk kubus memiliki sisi 30 cm. Jika akan dibungkus kertas dan setiap lembar kertas berukuran 0,5 m × 0,7 m, berapa lembar minimum yang dibutuhkan?",
-        "options": {"A": "2 lembar", "B": "3 lembar", "C": "4 lembar", "D": "1 lembar"},
-        "answer": "A",
-        "explain": "Luas permukaan kubus = 6×(0.3×0.3)=0.54 m². Satu lembar = 0.35 m². 0.54/0.35 ≈ 1.54 → butuh 2 lembar."
-    },
-]
+- A 10-question multiple-choice quiz about "bangun ruang sisi datar" (polyhedral solids with flat faces) focused on measuring critical thinking in everyday application problems.
+- Student and Teacher roles (selectable). Students take the quiz and give short reasoning for each answer. After submission the app calculates scores and creates an Excel (.xlsx) file containing the student's answers, reasoning, score, and timestamp which can be downloaded directly.
+- Teacher role shows an example template and instructions for collecting student files and evaluating them.
 
-# ----------------------
-# Fungsi Skor
-# ----------------------
-def compute_score(answers, justifications):
-    correct = 0
-    bonus = 0.0
-    for q in QUESTIONS:
-        qid = q["id"]
-        if answers.get(qid) == q["answer"]:
-            correct += 1
-        if len(justifications.get(qid, "").strip()) >= 30:
-            bonus += 0.5
-    max_score = len(QUESTIONS) + (0.5 * len(QUESTIONS))
-    total = correct + bonus
-    percent = (total / max_score) * 100
-    return {
-        "correct_count": correct,
-        "bonus_points": bonus,
-        "total_score": total,
-        "percent": round(percent, 2),
-        "max_score": max_score
-    }
+---
 
-# ----------------------
-# UI: Header & Role
-# ----------------------
-st.title("Evaluasi Bangun Ruang Sisi Datar (10 Soal)")
-st.write("Aplikasi ini membantu siswa mengerjakan soal berbasis kehidupan sehari-hari dan memberikan hasil dalam bentuk Excel.")
+## Files included (in this single preview):
 
-role = st.sidebar.selectbox("Pilih Peran", ["Siswa", "Guru"])
+### package.json
 
-# Penyimpanan sementara
-if "responses" not in st.session_state:
-    st.session_state.responses = []
+```json
+{
+  "name": "evaluasi-bangun-ruang-sisi-datar",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  }
+}
+```
 
-# ----------------------
-# GURU VIEW
-# ----------------------
-if role == "Guru":
-    st.header("👩‍🏫 Panel Guru — Rekapitulasi Hasil")
-    if len(st.session_state.responses) == 0:
-        st.warning("Belum ada data siswa.")
-    else:
-        df = pd.DataFrame(st.session_state.responses)
-        st.dataframe(df)
-        avg_percent = df["percent"].mean()
-        st.metric("Rata-rata Nilai (%)", f"{avg_percent:.2f}%")
+(You can also set this up with Create React App; the code is framework-agnostic — it uses standard React imports and the `xlsx` library to generate Excel files.)
 
-        towrite = io.BytesIO()
-        df.to_excel(towrite, index=False, engine="openpyxl")
-        towrite.seek(0)
-        st.download_button("📥 Unduh Rekap Excel", data=towrite, file_name="rekap_siswa.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+---
 
-# ----------------------
-# SISWA VIEW
-# ----------------------
-if role == "Siswa":
-    st.header("🧑‍🎓 Form Siswa")
-    name = st.text_input("Nama lengkap:")
-    email = st.text_input("Email (opsional):")
+### README.md (short)
 
-    answers = {}
-    justifications = {}
+```
+Repository name: evaluasi-bangun-ruang-sisi-datar
+Description: A small React web app that presents 10 multiple-choice questions about polyhedral solids (bangun ruang sisi datar) designed to measure students' critical thinking for real-life problem solving. Students submit answers + short reasoning; the app produces a downloadable Excel report per attempt.
 
-    with st.form("quiz_form"):
-        for q in QUESTIONS:
-            st.markdown(f"**{q['id']}. {q['question']}**")
-            choice = st.radio("Pilih jawaban:", list(q["options"].keys()), key=f"ans_{q['id']}")
-            st.write(", ".join([f\"{k}) {v}\" for k, v in q['options'].items()]))
-            just = st.text_area("Justifikasi singkat (minimal 30 karakter):", key=f"just_{q['id']}")
-            answers[q["id"]] = choice
-            justifications[q["id"]] = just
+How to run:
+1. git clone <repo-url>
+2. npm install
+3. npm start
 
-        submitted = st.form_submit_button("Kirim Jawaban")
+What the teacher should do:
+- Share the app URL with students or host it on GitHub Pages / Netlify / Vercel.
+- Ask students to enter their name/class when taking the quiz so exported Excel files can be tracked.
+- Collect the Excel files and grade the reasoning columns manually or import to a gradebook.
 
-    if submitted:
-        if not name.strip():
-            st.warning("Masukkan nama terlebih dahulu!")
-        else:
-            result = compute_score(answers, justifications)
-            st.success(f"Hasil: {result['total_score']:.2f}/{result['max_score']:.2f} ({result['percent']}%)")
-            st.write(f"Jawaban benar: {result['correct_count']}, Bonus justifikasi: {result['bonus_points']:.1f}")
+What the student should do:
+- Choose role "Student", fill name/class, answer each multiple choice and add 1-2 sentence reasoning for each answer.
+- Submit and download the Excel report, then upload to the teacher's LMS or send by email.
+```
 
-            record = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "student_name": name,
-                "email": email,
-                **result
-            }
-            st.session_state.responses.append(record)
+---
 
-            df_single = pd.DataFrame([record])
-            towrite = io.BytesIO()
-            df_single.to_excel(towrite, index=False, engine="openpyxl")
-            towrite.seek(0)
-            st.download_button("📥 Unduh Hasilmu (Excel)", data=towrite, file_name=f"hasil_{name.replace(' ', '_')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+### src/App.jsx
 
-st.markdown("---")
-st.caption("© 2025 Evaluasi Bangun Ruang Sisi Datar | Dikembangkan untuk pembelajaran berbasis berpikir kritis")
+```jsx
+import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import * as XLSX from 'xlsx';
+
+const QUESTIONS = [
+  {
+    id: 1,
+    text: 'Sebuah kotak berbentuk balok dimensi 60 cm x 40 cm x 30 cm. Jika ingin mengecat bagian luar kotak (seluruh permukaan luar), berapa luas permukaan yang harus dicat? (Pertimbangkan pemikiran langkah-langkah dan pilih jawaban yang benar)',
+    choices: [
+      '7800 cm²',
+      '11400 cm²',
+      '13200 cm²',
+      '15600 cm²'
+    ],
+    answer: 2 // 11400
+  },
+  {
+    id: 2,
+    text: 'Sebuah prisma segitiga memiliki alas segitiga dengan luas 12 cm² dan tinggi prisma 10 cm. Volume prisma tersebut adalah…',
+    choices: ['120 cm³', '240 cm³', '60 cm³', '12 cm³'],
+    answer: 0
+  },
+  {
+    id: 3,
+    text: 'Seorang tukang ingin membuat tong sampah bentuk tabung dengan tutup berbentuk kerucut. Jika volume total harus kurang dari 50.000 cm³, pendekatan mana yang paling tepat untuk memilih ukuran? (pilih jawaban numerik yang benar)',
+    choices: ['Volume tabung 45.000 cm³ + kerucut 4.000 cm³', 'Volume tabung 30.000 cm³ + kerucut 20.000 cm³', 'Volume tabung 60.000 cm³', 'Volume tabung 49.999 cm³ + kerucut 2 cm³'],
+    answer: 0
+  },
+  {
+    id: 4,
+    text: 'Sebuah limas segiempat alasnya berbentuk persegi 8 cm sisi. Tinggi limas 9 cm. Berapa volume limas?',
+    choices: ['192 cm³', '384 cm³', '1536 cm³', '576 cm³'],
+    answer: 0
+  },
+  {
+    id: 5,
+    text: 'Mengapa penting mempertimbangkan jaringan sambungan / overlap saat merakit kotak dari karton untuk mengemas barang? (pilih jawaban yang paling terkait pemikiran kritis)',
+    choices: [
+      'Agar terlihat rapi saja',
+      'Agar muatan tidak keluar dan kekuatan sambungan cukup pada titik beban',
+      'Agar menghemat cat',
+      'Tidak berpengaruh pada kekuatan kemasan'
+    ],
+    answer: 1
+  },
+  {
+    id: 6,
+    text: 'Sebuah bangun ruang sisi datar—kubus—memiliki rusuk 5 cm. Jika ingin membungkusnya dengan kertas kado dengan sisa minimal, luas kertas minimum yang diperlukan kira-kira…',
+    choices: ['150 cm²', '300 cm²', '1500 cm²', '750 cm²'],
+    answer: 2
+  },
+  {
+    id: 7,
+    text: 'Seorang arsitek mempertimbangkan bentuk atap berupa prisma segitiga vs limas segiempat untuk ruang penyimpanan. Pertimbangan pemikiran kritis apa yang paling relevan?',
+    choices: ['Estetika semata', 'Volume dan kemudahan konstruksi serta pengaliran air', 'Hanya biaya material', 'Warna cat'],
+    answer: 1
+  },
+  {
+    id: 8,
+    text: 'Sebuah kerucut es krim memiliki tinggi 12 cm dan jari-jari 3 cm. Volume es krim (kerucut) adalah…',
+    choices: ['36π cm³', '36π/3 cm³', '36π/9 cm³', '12π cm³'],
+    answer: 1
+  },
+  {
+    id: 9,
+    text: 'Jika kita ingin memindahkan beberapa barang berbentuk balok ke mobil, apa pendekatan kritis terbaik sebelum mengangkat?',
+    choices: ['Mengira muatan muat saja', 'Mengukur dimensi dan susunan sehingga muatan stabil dan aman', 'Angkat secepat mungkin', 'Masukkan tanpa perencanaan'],
+    answer: 1
+  },
+  {
+    id: 10,
+    text: 'Sebuah prisma segiempat beraturan memiliki alas persegi 7 cm sisi dan tinggi 10 cm. Luas permukaan total (termuat semua sisi) adalah…',
+    choices: ['686 cm²', '392 cm²', '266 cm²', '420 cm²'],
+    answer: 3
+  }
+];
+
+function formatTimestamp() {
+  return new Date().toLocaleString();
+}
+
+function App() {
+  const [role, setRole] = useState('student');
+  const [name, setName] = useState('');
+  const [kelas, setKelas] = useState('');
+  const [answers, setAnswers] = useState(() => QUESTIONS.map(() => ({ choice: null, reason: '' })));
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(null);
+
+  function handleChoice(qIdx, choiceIdx) {
+    const copy = [...answers];
+    copy[qIdx] = { ...copy[qIdx], choice: choiceIdx };
+    setAnswers(copy);
+  }
+  function handleReason(qIdx, text) {
+    const copy = [...answers];
+    copy[qIdx] = { ...copy[qIdx], reason: text };
+    setAnswers(copy);
+  }
+
+  function computeScore() {
+    let s = 0;
+    QUESTIONS.forEach((q, i) => {
+      if (answers[i].choice === q.answer) s += 1;
+    });
+    return s;
+  }
+
+  function handleSubmit() {
+    const s = computeScore();
+    setScore(s);
+    setSubmitted(true);
+    // create excel
+    const rows = QUESTIONS.map((q, i) => ({
+      'No': q.id,
+      'Pertanyaan': q.text,
+      'Pilihan Pilihan (0-based index)': answers[i].choice,
+      'Isi Pilihan': answers[i].choice != null ? q.choices[answers[i].choice] : '',
+      'Jawaban Benar': q.choices[q.answer],
+      'Alasan Siswa': answers[i].reason,
+      'Benar?': answers[i].choice === q.answer ? 'YA' : 'TIDAK'
+    }));
+
+    const meta = {
+      'Nama Siswa': name,
+      'Kelas': kelas,
+      'Skor': `${s} / ${QUESTIONS.length}`,
+      'Waktu': formatTimestamp()
+    };
+
+    const wsData = [
+      ['Nama Siswa', meta['Nama Siswa']],
+      ['Kelas', meta['Kelas']],
+      ['Skor', meta['Skor']],
+      ['Waktu', meta['Waktu']],
+      [],
+      ['No', 'Pertanyaan', 'Pilihan Index', 'Isi Pilihan', 'Jawaban Benar', 'Alasan Siswa', 'Benar?']
+    ];
+
+    rows.forEach(r => {
+      wsData.push([r['No'], r['Pertanyaan'], r['Pilihan Pilihan (0-based index)'], r['Isi Pilihan'], r['Jawaban Benar'], r['Alasan Siswa'], r['Benar?']]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Hasil');
+
+    const filename = `${name || 'siswa'}_${(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-')}_hasil.xlsx`;
+    XLSX.writeFile(wb, filename);
+  }
+
+  return (
+    <div style={{ fontFamily: 'system-ui, Arial', padding: 20, maxWidth: 900, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>Evaluasi: Bangun Ruang Sisi Datar — 10 Soal (Pilihan Ganda + Alasan)</h1>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ marginRight: 8 }}>Peran:</label>
+        <select value={role} onChange={e => setRole(e.target.value)}>
+          <option value="student">Siswa</option>
+          <option value="teacher">Guru</option>
+        </select>
+      </div>
+
+      {role === 'student' && (
+        <div>
+          <div style={{ marginBottom: 12 }}>
+            <input placeholder="Nama Siswa" value={name} onChange={e => setName(e.target.value)} style={{ marginRight: 8 }} />
+            <input placeholder="Kelas" value={kelas} onChange={e => setKelas(e.target.value)} />
+          </div>
+
+          {QUESTIONS.map((q, i) => (
+            <div key={q.id} style={{ padding: 12, border: '1px solid #ddd', borderRadius: 8, marginBottom: 12 }}>
+              <div style={{ fontWeight: 600 }}>{q.id}. {q.text}</div>
+              <div style={{ marginTop: 8 }}>
+                {q.choices.map((c, ci) => (
+                  <div key={ci} style={{ marginBottom: 6 }}>
+                    <label>
+                      <input type="radio" name={`q-${q.id}`} checked={answers[i].choice === ci} onChange={() => handleChoice(i, ci)} /> {' '}
+                      {c}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <textarea placeholder="Tulis 1-2 kalimat alasan / strategi pemecahan (kritis)" value={answers[i].reason} onChange={e => handleReason(i, e.target.value)} style={{ width: '100%', minHeight: 60 }} />
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 8 }}>
+            <button onClick={handleSubmit} style={{ padding: '8px 16px', borderRadius: 8 }}>Kirim & Unduh Hasil (Excel)</button>
+            {submitted && (
+              <div style={{ marginTop: 8 }}>
+                <strong>Skor:</strong> {score} / {QUESTIONS.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {role === 'teacher' && (
+        <div>
+          <h2>Peran Guru</h2>
+          <ol>
+            <li>Host aplikasi (misal GitHub Pages / Netlify / Vercel) dan sebarkan tautan ke siswa.</li>
+            <li>Minta siswa mengisi Nama dan Kelas sebelum mengerjakan.</li>
+            <li>Terima file Excel hasil setiap siswa. File berisi jawaban pilihan serta kolom alasan siswa untuk menilai kemampuan berpikir kritis.</li>
+            <li>Gunakan rubrik penilaian: 1) Ketepatan jawaban (benar/salah), 2) Kedalaman alasan (0-2), 3) Relevansi alasan (0-2). Jumlahkan untuk skor akhir.</li>
+            <li>Simpan file dalam folder kelas dan susun agregat nilai bila perlu.</li>
+          </ol>
+          <h3>Template penilaian cepat (saran)</h3>
+          <pre style={{ background: '#f7f7f7', padding: 8, borderRadius: 6 }}>
+Ketepatan jawaban: 1 point per benar
+Kedalaman alasan: 0 (kosong/tidak relevan), 1 (dangkal), 2 (mendalam)
+Relevansi alasan: 0-2
+Total per soal: 0-5
+          </pre>
+          <p>Jika guru ingin, saya bisa bantu membuat versi yang menyimpan banyak hasil ke satu file CSV/Excel (fitur kolaboratif) — beri tahu format yang diinginkan.</p>
+        </div>
+      )}
+
+      <footer style={{ marginTop: 20, fontSize: 13, color: '#666' }}>
+        Repo name suggestion: <strong>evaluasi-bangun-ruang-sisi-datar</strong>
+        <br />Description suggestion: <em>Web app evaluasi 10 soal bangun ruang sisi datar untuk mengukur kemampuan berpikir kritis siswa; hasil diunduh sebagai Excel.</em>
+      </footer>
+    </div>
+  );
+}
+
+// Mount for quick demo
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(<App />);
+}
+
+export default App;
+```
+
+---
+
+## Notes & next steps
+
+- The code uses `xlsx` (SheetJS) to generate Excel files directly in the browser. When deploying, ensure `xlsx` is installed or included via CDN.
+- The teacher/student workflow is intentionally lightweight: each student downloads their own Excel file which the teacher collects. For a centralized system, we'd need server-side endpoints and storage.
+
+---
+
+Happy to convert this into a full GitHub repo structure (separate files + `.gitignore`) and produce a downloadable ZIP, or push to a GitHub repo if you provide access/token. Tell me which you prefer next.
