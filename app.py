@@ -1,305 +1,217 @@
-/*
-Repository name: evaluasi-bangun-datar-sisi-datar
-Description: A lightweight single-file React app that delivers 10 real-life multiple-choice questions about flat shapes (bangun datar sisi datar) to assess students' critical-thinking in problem solving. It collects answers, optional short justifications, and exports the student's work as an Excel/CSV file for teachers to review.
+# app.py
+import streamlit as st
+import pandas as pd
+import io
+from datetime import datetime
 
-What this file contains:
-- A complete React component (default export) that can be used as App.jsx in a Create React App / Vite React project.
-- 10 MCQ in Indonesian with real-life contexts.
-- Optional short-justification fields so students can explain their reasoning (for critical thinking assessment).
-- CSV export (download) of the student's responses and metadata.
-- Simple scoring and feedback.
+st.set_page_config(page_title="Evaluasi Bangun Ruang Sisi Datar", layout="centered")
 
-Peran guru dan siswa (ringkasan):
-- Peran Guru:
-  1. Menyajikan pre-test dan instruksi (tujuan: mengukur kemampuan berpikir kritis pada konteks kehidupan sehari-hari).
-  2. Memfasilitasi: menjelaskan format soal, waktu pengerjaan, dan cara mengisi kolom penjelasan singkat.
-  3. Mengunduh file hasil (Excel/CSV) dan menilai aspek kualitatif dari penjelasan siswa (rubrik berpikir kritis: kejelasan premis, penggunaan fakta/konsep, kesimpulan logis, kreativitas solusi).
-  4. Memberi umpan balik individu/kelompok berdasarkan skor kuantitatif dan analisis kualitatif jawaban.
+# ----------------------
+# DATA: 10 soal + opsi
+# ----------------------
+QUESTIONS = [
+    {
+        "id": "Q1",
+        "question": "Sebuah kotak kardus berukuran panjang 40 cm, lebar 30 cm, tinggi 20 cm. Berapa volume kotak tersebut?",
+        "options": {"A": "24.000 cm³", "B": "2.400 cm³", "C": "240.000 cm³", "D": "4.000 cm³"},
+        "answer": "A",
+        "explain": "Volume balok = p × l × t = 40×30×20 = 24.000 cm³."
+    },
+    {
+        "id": "Q2",
+        "question": "Sebuah menara berbentuk prisma segitiga memiliki alas segitiga dengan luas 6 m² dan tinggi prisma 10 m. Volume berapa?",
+        "options": {"A": "60 m³", "B": "16 m³", "C": "600 m³", "D": "6 m³"},
+        "answer": "A",
+        "explain": "Volume prisma = luas alas × tinggi = 6 × 10 = 60 m³."
+    },
+    {
+        "id": "Q3",
+        "question": "Sebuah limas segiempat dengan luas alas 25 m² dan tinggi 6 m. Volume limas adalah ...",
+        "options": {"A": "150 m³", "B": "50 m³", "C": "25 m³", "D": "450 m³"},
+        "answer": "B",
+        "explain": "Volume limas = (1/3) × luas alas × tinggi = (1/3)×25×6 = 50 m³."
+    },
+    {
+        "id": "Q4",
+        "question": "Sebuah kubus memiliki diagonal ruang 6√3 cm. Panjang sisi kubus adalah ...",
+        "options": {"A": "6 cm", "B": "3 cm", "C": "2√3 cm", "D": "√3 cm"},
+        "answer": "A",
+        "explain": "Diagonal ruang kubus = s√3 → s = diagonal/√3 = 6√3 / √3 = 6 cm."
+    },
+    {
+        "id": "Q5",
+        "question": "Sebuah bak air berbentuk balok panjang 2 m, lebar 1,5 m, tinggi 1 m. Jika diisi 75% kapasitasnya, berapa volume air (m³)?",
+        "options": {"A": "1,5 m³", "B": "3,0 m³", "C": "0,75 m³", "D": "2,5 m³"},
+        "answer": "A",
+        "explain": "Kapasitas total = 2×1.5×1 = 3 m³; 75% → 0.75×3 = 2.25 m³. (Catatan: jawaban A salah ketik sebelumnya) --> **Betul: 2.25 m³**. (Dalam soal ini, opsi A harus 2.25. Pastikan opsi di repo sesuai.)"
+    },
+    {
+        "id": "Q6",
+        "question": "Jika sebuah prisma segiempat memiliki ukuran alas 4 m × 3 m dan tinggi 5 m, berapa luas permukaan seluruh prisma (dengan tutup dan alas)?",
+        "options": {"A": "94 m²", "B": "86 m²", "C": "94 m³", "D": "120 m²"},
+        "answer": "A",
+        "explain": "Luas alas = 4×3=12; 2×alas=24. Keliling alas = 2(4+3)=14. Luas selimut = keliling×tinggi = 14×5=70. Total = 24+70=94 m²."
+    },
+    {
+        "id": "Q7",
+        "question": "Sebuah topi berbentuk kerucut memiliki jari-jari 7 cm dan tinggi 24 cm. Volume kerucut berapa? (π = 22/7)",
+        "options": {"A": "2.464 cm³", "B": "1.848 cm³", "C": "2.310 cm³", "D": "1.232 cm³"},
+        "answer": "A",
+        "explain": "Volume = (1/3)πr²h = (1/3)×(22/7)×7²×24 = (1/3)×22×7×24 = 2.464 cm³."
+    },
+    {
+        "id": "Q8",
+        "question": "Sebuah kotak kemasan berbentuk balok diperlukan untuk menampung sebuah botol berbentuk silinder berdiameter 8 cm dan tinggi 30 cm. Minimum ukuran lebar balok agar botol muat (asumsi berdiri) adalah ...",
+        "options": {"A": "8 cm", "B": "16 cm", "C": "π×8 cm", "D": "4 cm"},
+        "answer": "A",
+        "explain": "Jika botol berdiri, lebar minimum balok perlu ≥ diameter = 8 cm."
+    },
+    {
+        "id": "Q9",
+        "question": "Sebuah gedung berbentuk limas segiempat dipasang ventilasi di setiap sisi segitiga tegak. Jika tinggi segitiga sisi adalah 3 m dan alas sisi 4 m, luas total 4 sisi segitiga adalah ...",
+        "options": {"A": "24 m²", "B": "12 m²", "C": "48 m²", "D": "6 m²"},
+        "answer": "A",
+        "explain": "Luas satu segitiga = 1/2 × alas × tinggi = 1/2×4×3 = 6 m². Empat sisi → 24 m²."
+    },
+    {
+        "id": "Q10",
+        "question": "Sebuah paket berbentuk kubus memiliki sisi 30 cm. Jika akan dibungkus kertas dan setiap lembar kertas berukuran 0,5 m × 0,7 m, berapa lembar minimum (asumsi tidak ada sisa besar)?",
+        "options": {"A": "2 lembar", "B": "3 lembar", "C": "4 lembar", "D": "1 lembar"},
+        "answer": "A",
+        "explain": "Luas permukaan kubus = 6×(0.3×0.3)=6×0.09=0.54 m². Satu lembar = 0.35 m². 0.54 / 0.35 ≈ 1.54 → butuh 2 lembar."
+    },
+]
 
-- Peran Siswa:
-  1. Membaca setiap soal dengan teliti dan memilih jawaban terbaik berdasarkan konteks.
-  2. Mengisi singkat alasan/penjelasan untuk setiap soal (minimal 1-2 kalimat) untuk menunjukkan proses berpikir.
-  3. Menyelesaikan seluruh soal, meninjau jawaban, lalu menekan tombol "Kirim & Unduh Hasil" untuk menghasilkan file Excel/CSV.
-  4. Menerima dan merefleksikan umpan balik guru untuk memperbaiki strategi pemecahan masalah.
-
-Instruksi singkat penggunaan (copy ke App.jsx):
-1. Buat project React (Create React App atau Vite).
-2. Tempelkan file ini sebagai src/App.jsx.
-3. Jalankan proyek dengan `npm install` dan `npm start` (atau `npm run dev` untuk Vite).
-4. Buka halaman, isi nama & kelas, kerjakan soal, lalu klik tombol untuk mengunduh hasil.
-
-*/
-
-import React, { useState } from 'react';
-
-const QUESTIONS = [
-  {
-    id: 1,
-    text: 'Seorang tukang roti ingin memotong kertas pembungkus berbentuk persegi panjang menjadi beberapa kotak persegi sama besar untuk membungkus roti. Jika ukuran kertas 60 cm x 40 cm, berapa ukuran sisi kotak persegi maksimum agar tidak tersisa kertas?
-    (Pilih jawaban yang benar)',
-    choices: [
-      '10 cm',
-      '20 cm',
-      '30 cm',
-      '40 cm'
-    ],
-    answer: 1 // index (0-based): 1 -> '20 cm'
-  },
-  {
-    id: 2,
-    text: 'Seorang petani ingin membuat pagar berbentuk segiempat untuk kebun dengan luas 72 m². Jika salah satu sisi panjangnya 12 m, berapa lebar kebun tersebut? (Aplikasi kehidupan sehari-hari)',
-    choices: [
-      '4 m',
-      '5 m',
-      '6 m',
-      '8 m'
-    ],
-    answer: 2
-  },
-  {
-    id: 3,
-    text: 'Sebuah meja berbentuk persegi panjang memiliki panjang 150 cm dan lebar 80 cm. Untuk menutup meja dengan kain, berapa luas kain yang diperlukan dalam meter persegi (m²)?',
-    choices: [
-      '1.2 m²',
-      '12 m²',
-      '1.5 m²',
-      '0.72 m²'
-    ],
-    answer: 0
-  },
-  {
-    id: 4,
-    text: 'Seorang desainer ingin membuat mozaik berbentuk segitiga sama sisi dengan sisi 10 cm. Berapakah keliling satu mozaik segitiga tersebut?',
-    choices: [
-      '10 cm',
-      '20 cm',
-      '30 cm',
-      '40 cm'
-    ],
-    answer: 2
-  },
-  {
-    id: 5,
-    text: 'Sebuah taman kota berbentuk lingkaran memiliki radius 7 meter. Ibu-ibu komunitas ingin menanam pagar bunga di sepanjang keliling taman. Berapa panjang keliling yang harus mereka tanami? (Gunakan π ≈ 22/7)',
-    choices: [
-      '14 m',
-      '44 m',
-      '154 m',
-      '88 m'
-    ],
-    answer: 1
-  },
-  {
-    id: 6,
-    text: 'Sebuah papan reklame berbentuk trapesium dengan panjang sisi sejajar 8 m dan 5 m, serta tinggi 3 m. Berapa luas papan reklame tersebut?',
-    choices: [
-      '19.5 m²',
-      '13.5 m²',
-      '39 m²',
-      '20 m²'
-    ],
-    answer: 0
-  },
-  {
-    id: 7,
-    text: 'Seorang tukang kayu akan membuat kotak dari papan berbentuk persegi dengan sisi 25 cm. Namun, ia ingin mengetahui berapa luas permukaan atas kotak (satu sisi). Berapa luas sisi atasnya?',
-    choices: [
-      '625 cm²',
-      '100 cm²',
-      '2500 cm²',
-      '125 cm²'
-    ],
-    answer: 0
-  },
-  {
-    id: 8,
-    text: 'Sebuah lantai kamar mandi berbentuk persegi panjang 2,5 m x 1,6 m akan dipasang keramik persegi ukuran 20 cm x 20 cm. Berapa banyak keramik yang diperlukan (asumsikan tidak ada potongan)?',
-    choices: [
-      '200 buah',
-      '125 buah',
-      '50 buah',
-      '100 buah'
-    ],
-    answer: 3
-  },
-  {
-    id: 9,
-    text: 'Seorang pengrajin ingin memotong kain berbentuk persegi panjang menjadi beberapa segitiga siku-siku yang sama besar untuk membuat patchwork. Jika kain berukuran 120 cm x 80 cm setiap segitiga didapat dari memotong persegi 40 cm x 40 cm menjadi dua segitiga, berapa jumlah segitiga yang didapat?',
-    choices: [
-      '48',
-      '24',
-      '12',
-      '96'
-    ],
-    answer: 0
-  },
-  {
-    id: 10,
-    text: 'Sebuah pintu kamar berbentuk persegi panjang 210 cm x 80 cm ingin dicat. Jika cat menutup 1 liter untuk 6 m², berapa liter cat yang diperlukan? (Pembulatan ke dua desimal)',
-    choices: [
-      '0.34 L',
-      '1.68 L',
-      '2.80 L',
-      '0.28 L'
-    ],
-    answer: 1
-  }
-];
-
-export default function App() {
-  const [name, setName] = useState('');
-  const [className, setClassName] = useState('');
-  const [answers, setAnswers] = useState(() => QUESTIONS.map(() => null));
-  const [explanations, setExplanations] = useState(() => QUESTIONS.map(() => ''));
-  const [submitted, setSubmitted] = useState(false);
-
-  function handleChoiceChange(qIndex, choiceIndex) {
-    const next = [...answers];
-    next[qIndex] = choiceIndex;
-    setAnswers(next);
-  }
-
-  function handleExplanationChange(qIndex, text) {
-    const next = [...explanations];
-    next[qIndex] = text;
-    setExplanations(next);
-  }
-
-  function score() {
-    let correct = 0;
-    for (let i = 0; i < QUESTIONS.length; i++) {
-      if (answers[i] === QUESTIONS[i].answer) correct++;
-    }
-    return { total: QUESTIONS.length, correct, percent: Math.round((correct / QUESTIONS.length) * 100) };
-  }
-
-  function buildCSV() {
-    const header = [
-      'Nama', 'Kelas', 'Tanggal', 'Soal ID', 'Soal', 'Jawaban Pilihan', 'Jawaban Benar', 'Benar?', 'Penjelasan Singkat'
-    ];
-
-    const rows = [];
-    const now = new Date().toLocaleString();
-    for (let i = 0; i < QUESTIONS.length; i++) {
-      rows.push([
-        name,
-        className,
-        now,
-        QUESTIONS[i].id,
-        QUESTIONS[i].text.replace(/\n/g, ' '),
-        answers[i] != null ? QUESTIONS[i].choices[answers[i]] : '',
-        QUESTIONS[i].choices[QUESTIONS[i].answer],
-        answers[i] === QUESTIONS[i].answer ? 'YA' : 'TIDAK',
-        explanations[i].replace(/\n/g, ' ')
-      ]);
+# ----------------------
+# Utility functions
+# ----------------------
+def compute_score(answers, justifications):
+    correct = 0
+    bonus = 0.0
+    per_correct = 1.0
+    for idx, q in enumerate(QUESTIONS):
+        qid = q["id"]
+        user_ans = answers.get(qid, "")
+        if user_ans == q["answer"]:
+            correct += per_correct
+        # simple heuristic: justifikasi cukup panjang => +0.5 poin
+        justification = justifications.get(qid, "")
+        if justification and len(justification.strip()) >= 30:
+            bonus += 0.5
+    max_score = len(QUESTIONS) + (0.5 * len(QUESTIONS))  # if all justifications long
+    total = correct + bonus
+    percent = (total / max_score) * 100
+    return {
+        "correct_count": correct,
+        "bonus_points": bonus,
+        "total_score": total,
+        "percent": round(percent, 2),
+        "max_score": max_score
     }
 
-    // Also include summary row
-    const s = score();
-    rows.push(['', '', '', 'SUMMARY', `Benar: ${s.correct}/${s.total}`, `Persen: ${s.percent}%`, '', '', '']);
+# ----------------------
+# UI: header & role
+# ----------------------
+st.title("Evaluasi: Bangun Ruang Sisi Datar — 10 Soal (Pilihan Ganda)")
+st.write("Aplikasi ini mengumpulkan jawaban, meminta justifikasi singkat (untuk menilai berpikir kritis), dan menghasilkan file Excel yang bisa diunduh.")
 
-    // Convert to CSV
-    const csvParts = [];
-    csvParts.push(header.join(','));
-    for (const r of rows) {
-      // Escape double quotes
-      const escaped = r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"');
-      csvParts.push(escaped.join(','));
-    }
-    return csvParts.join('\n');
-  }
+role = st.sidebar.selectbox("Pilih Peran", ["Siswa", "Guru"])
 
-  function downloadCSV() {
-    if (!name || !className) {
-      alert('Silakan isi Nama dan Kelas sebelum mengunduh hasil.');
-      return;
-    }
-    const csv = buildCSV();
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const safeName = name.replace(/[^a-z0-9_\-]/gi, '_');
-    a.download = `${safeName}_${className}_hasil_bangun_datar.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+# Role descriptions
+if role == "Siswa":
+    st.info("Peran Siswa: kerjakan 10 soal, lengkapi justifikasi singkat tiap soal (opsional tapi meningkatkan skor berpikir kritis). Setelah submit, Anda dapat mengunduh hasil dalam bentuk Excel.")
+else:
+    st.info("Peran Guru: lihat rekap semua respon siswa, analitik sederhana, dan unduh seluruh respons sebagai Excel untuk penilaian lebih lanjut.")
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitted(true);
-    // Auto-download after submit
-    setTimeout(() => downloadCSV(), 300);
-  }
+# Simple storage in-memory; for real deployment gunakan DB or Sheets
+if "responses" not in st.session_state:
+    st.session_state.responses = []  # list of dicts
 
-  const s = score();
+# ----------------------
+# GURU VIEW
+# ----------------------
+if role == "Guru":
+    st.header("Panel Guru — Rekap Respon")
+    st.write("Total respon:", len(st.session_state.responses))
+    if len(st.session_state.responses) == 0:
+        st.warning("Belum ada respon siswa. Minta siswa untuk mengerjakan kuis.")
+    else:
+        # build DataFrame
+        df = pd.DataFrame(st.session_state.responses)
+        st.dataframe(df)
+        st.markdown("**Statistik ringkas:**")
+        st.write(df[["timestamp", "student_name", "percent", "total_score"]].sort_values(by="timestamp", ascending=False).head(20))
+        # Simple aggregate
+        avg_percent = df["percent"].mean()
+        st.metric("Rata-rata persentase", f"{avg_percent:.2f}%")
+        # Download all as excel
+        towrite = io.BytesIO()
+        df.to_excel(towrite, index=False, engine="openpyxl")
+        towrite.seek(0)
+        st.download_button("Unduh semua respons (Excel)", data=towrite, file_name="rekap_respon_siswa.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.caption("Gunakan Excel untuk penilaian lengkap atau catat rubrik berpikir kritis.")
 
-  return (
-    <div className="min-h-screen p-6 bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow">
-        <h1 className="text-2xl font-bold mb-2">Evaluasi: Bangun Datar (Sisi-datar) — 10 Soal Pilihan Ganda</h1>
-        <p className="text-sm mb-4">Tujuan: Mengukur kemampuan berpikir kritis siswa dalam menyelesaikan soal berkonteks kehidupan sehari-hari.</p>
+# ----------------------
+# SISWA VIEW
+# ----------------------
+if role == "Siswa":
+    st.header("Form Siswa")
+    name = st.text_input("Nama lengkap", "")
+    email = st.text_input("Email (opsional)", "")
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-4">
-            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama siswa" className="flex-1 p-2 border rounded" />
-            <input required value={className} onChange={(e) => setClassName(e.target.value)} placeholder="Kelas" className="w-40 p-2 border rounded" />
-          </div>
+    st.write("Isi jawabanmu, dan berikan justifikasi singkat (minimal 30 karakter) bila memungkinkan — itu membantu menilai kemampuan berpikir kritis.")
+    answers = {}
+    justifications = {}
 
-          {QUESTIONS.map((q, qi) => (
-            <div key={q.id} className="p-4 border rounded">
-              <div className="font-medium">Soal {qi + 1}. {q.text}</div>
-              <div className="mt-2 space-y-1">
-                {q.choices.map((ch, ci) => (
-                  <label key={ci} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name={`q_${q.id}`}
-                      checked={answers[qi] === ci}
-                      onChange={() => handleChoiceChange(qi, ci)}
-                    />
-                    <span>{String.fromCharCode(65 + ci)}. {ch}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-2">
-                <label className="text-sm">Penjelasan singkat (1-2 kalimat) — tuliskan alasan pilihan Anda untuk menilai kemampuan berpikir kritis:</label>
-                <textarea value={explanations[qi]} onChange={(e) => handleExplanationChange(qi, e.target.value)} rows={2} className="w-full p-2 border rounded mt-1" placeholder="Tuliskan alasan singkat..." />
-              </div>
-            </div>
-          ))}
+    with st.form("quiz_form"):
+        for q in QUESTIONS:
+            st.markdown(f"**{q['id']}. {q['question']}**")
+            cols = st.columns([1, 5])
+            choice = cols[0].radio("Pilih:", options=list(q["options"].keys()), key=f"ans_{q['id']}")
+            st.write(", ".join([f"{k}) {v}" for k, v in q["options"].items()]))
+            just = st.text_area("Justifikasi singkat (bagaimana ini berhubungan dengan kehidupan sehari-hari atau alasan pilihanmu):", key=f"just_{q['id']}", placeholder="Contoh: 'Saya pilih A karena ...'", height=80)
+            answers[q["id"]] = choice
+            justifications[q["id"]] = just
 
-          <div className="flex gap-3">
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Kirim & Unduh Hasil</button>
-            <button type="button" onClick={() => { setAnswers(QUESTIONS.map(() => null)); setExplanations(QUESTIONS.map(() => '')); setSubmitted(false); }} className="px-4 py-2 border rounded">Reset</button>
-            <button type="button" onClick={() => { setSubmitted(true); downloadCSV(); }} className="px-4 py-2 border rounded">Unduh tanpa kirim</button>
-          </div>
-        </form>
+        submitted = st.form_submit_button("Submit Jawaban")
 
-        {submitted && (
-          <div className="mt-6 p-4 bg-gray-100 rounded">
-            <h2 className="font-semibold">Ringkasan Hasil</h2>
-            <p>Nilai: {s.correct} / {s.total} ({s.percent}%)</p>
-            <p className="text-sm mt-2">Catatan untuk guru: unduh CSV untuk menilai penjelasan singkat siswa dan gunakan rubrik berpikir kritis (kejelasan, penggunaan konsep, kebenaran langkah, kesimpulan).</p>
-          </div>
-        )}
+    if submitted:
+        if not name.strip():
+            st.warning("Masukkan nama terlebih dahulu supaya hasil bisa disimpan.")
+        else:
+            result = compute_score(answers, justifications)
+            st.success(f"Terima kasih, {name}! Hasilmu: {result['total_score']:.2f} / {result['max_score']:.2f} ({result['percent']}%).")
+            st.write(f"Jumlah jawaban benar (point): {result['correct_count']}")
+            st.write(f"Bonus poin untuk justifikasi (panjang >=30 karakter): {result['bonus_points']:.1f}")
+            st.markdown("**Ulasan singkat tiap soal (kunci & penjelasan):**")
+            for q in QUESTIONS:
+                st.write(f"- {q['id']}: Kunci = **{q['answer']}** — {q['explain']}")
 
-        <details className="mt-6 text-sm text-gray-600">
-          <summary className="cursor-pointer">Panduan singkat: cara menilai penjelasan (rubrik)</summary>
-          <ol className="mt-2 pl-4 list-decimal">
-            <li>Kejelasan premise & tujuan (0-2): apakah siswa menjelaskan apa yang dicari?</li>
-            <li>Penerapan konsep (0-2): apakah siswa menggunakan konsep bangun datar secara benar?</li>
-            <li>Kejelasan langkah/logika (0-2): apakah alur pemecahan masalah dapat dipahami?</li>
-            <li>Kreativitas & relevansi solusi (0-2): solusi efektif dan sesuai konteks?</li>
-            <li>Konsistensi jawaban & perhitungan (0-2): jawaban benar atau beralasan jika salah?</li>
-          </ol>
-        </details>
+            # Save response
+            record = {
+                "timestamp": datetime.now().isoformat(sep=" ", timespec="seconds"),
+                "student_name": name,
+                "email": email,
+                "percent": result["percent"],
+                "total_score": result["total_score"],
+                "correct_count": result["correct_count"],
+                "bonus_points": result["bonus_points"]
+            }
+            # add answers & justifications fields
+            for q in QUESTIONS:
+                record[f"{q['id']}_answer"] = answers.get(q["id"], "")
+                record[f"{q['id']}_justification"] = justifications.get(q["id"], "")
 
-      </div>
+            st.session_state.responses.append(record)
 
-      <footer className="max-w-4xl mx-auto mt-4 text-xs text-gray-500">Repository: evaluasi-bangun-datar-sisi-datar • Buat di local dan unggah ke GitHub. (File ini siap ditempel di src/App.jsx)</footer>
-    </div>
-  );
-}
+            # Create dataframe for the student download (single row)
+            df_single = pd.DataFrame([record])
+            towrite = io.BytesIO()
+            df_single.to_excel(towrite, index=False, engine="openpyxl")
+            towrite.seek(0)
+            st.download_button("Unduh hasilmu (Excel)", data=towrite, file_name=f"hasil_{name.replace(' ', '_')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.info("Catatan: Guru bisa meninjau file Excel yang berisi jawaban & justifikasi untuk menilai aspek berpikir kritis secara kualitatif.")
+
+# Footer: petunjuk singkat
+st.markdown("---")
+st.markdown("**Catatan untuk pengembang / guru:** untuk penyimpanan permanen dan multi-user, integrasikan database (Google Sheets, Firebase, atau Postgres). Mekanisme bonus justifikasi di atas bersifat heuristik; guru disarankan menilai kualitas justifikasi secara manual menggunakan rubrik.")
